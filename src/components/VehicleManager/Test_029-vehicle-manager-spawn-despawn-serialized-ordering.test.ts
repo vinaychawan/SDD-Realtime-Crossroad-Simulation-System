@@ -14,12 +14,15 @@ function createMockConfig(): SimulationConfig {
     signalCoordinationMode: 'STRICT_MUTUAL_EXCLUSION',
     laneSelectionStrategy: 'RANDOM',
     perDirection: {
-      NORTH: { spawnRatePerMinute: 30, averageExitDirection: 'SOUTH' },
-      SOUTH: { spawnRatePerMinute: 30, averageExitDirection: 'NORTH' },
-      EAST: { spawnRatePerMinute: 30, averageExitDirection: 'WEST' },
-      WEST: { spawnRatePerMinute: 30, averageExitDirection: 'EAST' }
+      NORTH: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 },
+      SOUTH: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 },
+      EAST: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 },
+      WEST: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 }
     },
-    emergency: { spawnRatePerMinute: 0 },
+    emergency: {
+      enabled: false,
+      spawnRatePerMinute: { AMBULANCE: 0, POLICE: 0, FIRE_BRIGADE: 0 }
+    },
     conflictZone: { sizeMeters: 25, maxWaitSeconds: 5, stopLineDistanceMeters: 20 },
     simulationSpeedMultiplier: 1
   };

@@ -1,7 +1,7 @@
 // TASK-032 acceptance criteria:
 // - All REQ-007 acceptance criteria automated for both strategies
 // - ≥90% statement coverage for VehicleManager and both strategy classes
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { VehicleManager } from './VehicleManager';
 import { RandomLaneStrategy } from './RandomLaneStrategy';
 import { IntelligentLaneStrategy } from './IntelligentLaneStrategy';
@@ -14,16 +14,23 @@ function createMockConfig(): SimulationConfig {
     signalCoordinationMode: 'STRICT_MUTUAL_EXCLUSION',
     laneSelectionStrategy: 'RANDOM',
     perDirection: {
-      NORTH: { spawnRatePerMinute: 30, averageExitDirection: 'SOUTH' },
-      SOUTH: { spawnRatePerMinute: 30, averageExitDirection: 'NORTH' },
-      EAST: { spawnRatePerMinute: 30, averageExitDirection: 'WEST' },
-      WEST: { spawnRatePerMinute: 30, averageExitDirection: 'EAST' }
+      NORTH: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 },
+      SOUTH: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 },
+      EAST: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 },
+      WEST: { spawnRatePerMinute: 30, greenDurationSec: 30, redDurationSec: 30 }
     },
-    emergency: { spawnRatePerMinute: 0 },
+    emergency: {
+      enabled: false,
+      spawnRatePerMinute: { AMBULANCE: 0, POLICE: 0, FIRE_BRIGADE: 0 }
+    },
     conflictZone: { sizeMeters: 25, maxWaitSeconds: 5, stopLineDistanceMeters: 20 },
     simulationSpeedMultiplier: 1
   };
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('TASK-032: Vehicle Manager lane selection acceptance tests', () => {
   describe('Random Strategy REQ-007 compliance', () => {
@@ -201,6 +208,14 @@ describe('TASK-032: Vehicle Manager lane selection acceptance tests', () => {
 
   describe('REQ-007: Comprehensive acceptance', () => {
     it('RandomLaneStrategy satisfies REQ-007 statistical requirements', () => {
+      const balancedRandomValues = [0.1, 0.45, 0.8]; // lanes 1, 2, 3 in a repeating balanced cycle
+      let randomCallIndex = 0;
+      vi.spyOn(Math, 'random').mockImplementation(() => {
+        const value = balancedRandomValues[randomCallIndex % balancedRandomValues.length];
+        randomCallIndex++;
+        return value;
+      });
+
       const manager = new VehicleManager(createMockConfig(), new RandomLaneStrategy());
       const laneCounts = { 1: 0, 2: 0, 3: 0 };
 

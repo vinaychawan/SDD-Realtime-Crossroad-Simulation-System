@@ -1,7 +1,7 @@
 ---
 title: Project Progress Documentation
 date_created: 2026-09-04
-status: In Progress (42 of 72 tasks complete)
+status: In Progress (47 of 72 tasks complete)
 ---
 
 # SDD Realtime Crossroad Simulation System - Progress Documentation
@@ -318,13 +318,56 @@ This document tracks the step-by-step implementation progress of the traffic int
 
 ---
 
-## Current Statistics (as of 2026-09-04, Phase 7 Complete)
+### Phase 8: Metrics Collector (TASK-043-047) ✅
+**Date Completed**: 2026-09-04
+**Status**: 100% Complete
+
+**Deliverables**:
+- Module structure with public interface (`IMetricsCollector`, `MetricsSnapshot`)
+- Provider-driven snapshot computation decoupled from physics and render loops
+- MF-001 average speed formula: `sum(speedKmh) / vehicleCount`, or `0` when empty
+- MF-001 rolling 60s throughput window using despawn event timestamps
+- MF-001 time-based collision-free ratio using collision start/end intervals
+- Collision interval union logic so overlapping active collisions count once in time-based ratio
+- Deadlock, FPS, physics Hz, memory, and CPU snapshot fields wired through event/provider hooks
+- Full MF-001 sign-off suite with documented examples
+
+**Key Features**:
+- **10 Hz-ready API**: `tick()` recomputes snapshots only when orchestrator schedules it
+- **Read-only snapshots**: `getSnapshot()` returns frozen copies to prevent UI mutation
+- **Rolling throughput**: Old despawn events are evicted at each metrics tick
+- **Collision timeline tracking**: `recordCollision()` and `resolveCollision()` model active duration
+- **Infrastructure collision support**: Handles `['vehicleId', 'INFRASTRUCTURE']` event tuples
+- **System metrics hooks**: Optional providers for render FPS, physics Hz, memory, and CPU
+- **Reset support**: Clears counters, histories, and snapshot state for simulation restart
+
+**Test Coverage**: 100% (statements, branches, functions, lines)
+**Tests**: 28 tests across 5 test files
+- TASK-043: 5 tests (module initialization, interface compliance, read-only snapshots, scheduling)
+- TASK-044: 5 tests (zero/single/multi vehicle average speed, stationary and emergency inclusion)
+- TASK-045: 6 tests (rolling 60s throughput, eviction, boundary, repeated tick behavior)
+- TASK-046: 7 tests (collision-free ratio, active/resolved collisions, interval union, infrastructure)
+- TASK-047: 5 tests (MF-001 examples, source-field wiring, reset behavior)
+
+**Git Branch**: `task-043-047-metrics-collector` (local, ready to push)
+**Build Status**: ✓ 0 TypeScript errors, all tests passing
+
+**Integration Points**:
+- Provides single source of truth for State Display panels (TASK-061-062)
+- Consumes Collision Detection events from TASK-036
+- Consumes Vehicle Manager despawn events from TASK-029
+- Consumes Conflict Zone deadlock events from TASK-025/TASK-026
+- Ready for Simulation Orchestrator scheduling in TASK-067+
+
+---
+
+## Current Statistics (as of 2026-09-04, Phase 8 Complete)
 
 ### Overall Progress
-- **Tasks Completed**: 42 of 72 (58.3%)
-- **Phases Completed**: 7 of 12
-- **Total Tests**: 253 passing
-- **Test Duration**: ~20.4 seconds full suite
+- **Tasks Completed**: 47 of 72 (65.3%)
+- **Phases Completed**: 8 of 12
+- **Total Tests**: 281 passing
+- **Test Duration**: ~16.8 seconds full suite
 - **Code Coverage**: 100% (all modules)
 - **Build Status**: ✓ Clean (0 errors, 0 warnings)
 
@@ -340,6 +383,7 @@ This document tracks the step-by-step implementation progress of the traffic int
 | Vehicle Manager | 4 files | 45 tests | 100% | ✅ Complete |
 | Collision Detection System | 2 files | 29 tests | 100% | ✅ Complete |
 | Emergency Vehicle Controller | 2 files | 38 tests | 100% | ✅ Complete |
+| Metrics Collector | 3 files | 28 tests | 100% | ✅ Complete |
 
 ### Git Repository Status
 - **Repository**: vinaychawan/SDD-Realtime-Crossroad-Simulation-System
@@ -352,21 +396,14 @@ This document tracks the step-by-step implementation progress of the traffic int
    5. `task-022-027-conflict-zone-manager` (be36055)
    6. `task-028-032-vehicle-manager` (a6115f9)
    7. `task-033-037-collision-detection` (pushed)
-   8. `task-038-042-emergency-vehicle-controller` (pushed) ← Current
+   8. `task-038-042-emergency-vehicle-controller` (pushed)
+   9. `task-043-047-metrics-collector` (local, ready to push) ← Current
 
 ---
 
-## Upcoming Phases (TASK-043 onwards)
+## Upcoming Phases (TASK-048 onwards)
 
-### Phase 8: Metrics Collector (TASK-043-047) 🔄 Next
-**Expected Deliverables**:
-- Metrics Collector module structure
-- Average speed calculation
-- Rolling 60s throughput window
-- Time-based collision-free ratio
-- Full MF-001 formula sign-off
-
-### Phase 9: Rendering Engine (TASK-048-052)
+### Phase 9: Rendering Engine (TASK-048-052) 🔄 Next
 **Expected Deliverables**:
 - **Full visual intersection rendering**
 - 4-way intersection with 3 lanes per direction
@@ -466,4 +503,4 @@ This document tracks the step-by-step implementation progress of the traffic int
 ---
 
 *Document last updated: 2026-09-04*
-*Next update scheduled: After TASK-022-027 (Conflict Zone Manager) completion*
+*Next update scheduled: After TASK-048-052 (Rendering Engine) completion*

@@ -2,7 +2,7 @@
 task_id: TASK-043
 title: "Metrics Collector — Initialize module structure"
 phase: "8: Metrics Collector"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-028]
 linked_adr: [ADR-008]
 depends_on: [TASK-002, TASK-036]

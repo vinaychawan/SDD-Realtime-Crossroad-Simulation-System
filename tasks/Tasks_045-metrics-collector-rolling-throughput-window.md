@@ -2,7 +2,7 @@
 task_id: TASK-045
 title: "Metrics Collector — Implement rolling 60s throughput window"
 phase: "8: Metrics Collector"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-028, MF-001]
 linked_adr: [ADR-008]
 depends_on: [TASK-043]

@@ -2,7 +2,7 @@
 task_id: TASK-046
 title: "Metrics Collector — Implement collision-free ratio (time-based)"
 phase: "8: Metrics Collector"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-028, MF-001]
 linked_adr: [ADR-008]
 depends_on: [TASK-036, TASK-043]

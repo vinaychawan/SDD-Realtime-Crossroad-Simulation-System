@@ -2,7 +2,7 @@
 task_id: TASK-047
 title: "Metrics Collector — Full test suite and MF-001 formula sign-off"
 phase: "8: Metrics Collector"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-028, MF-001]
 linked_adr: [ADR-008]
 depends_on: [TASK-044, TASK-045, TASK-046]

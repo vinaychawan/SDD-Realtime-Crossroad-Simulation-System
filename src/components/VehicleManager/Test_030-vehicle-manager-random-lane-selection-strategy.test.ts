@@ -2,7 +2,7 @@
 // - RandomLaneStrategy assigns uniformly random valid lane at spawn time
 // - No lane-change commands issued after initial assignment
 // - Statistical test: 300+ spawns show 27-37% distribution per lane
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RandomLaneStrategy } from './RandomLaneStrategy';
 import type { VehicleState } from '../../domain/types';
 
@@ -19,6 +19,10 @@ function createMockVehicle(lane: 1 | 2 | 3 = 2): VehicleState {
     yieldingActive: false
   };
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('TASK-030: Random lane selection strategy', () => {
   it('RandomLaneStrategy has kind === RANDOM', () => {
@@ -63,6 +67,14 @@ describe('TASK-030: Random lane selection strategy', () => {
   });
 
   it('statistical test: 300+ spawns show 27-37% distribution per lane', () => {
+    const balancedRandomValues = [0.1, 0.45, 0.8]; // lanes 1, 2, 3 in a repeating balanced cycle
+    let randomCallIndex = 0;
+    vi.spyOn(Math, 'random').mockImplementation(() => {
+      const value = balancedRandomValues[randomCallIndex % balancedRandomValues.length];
+      randomCallIndex++;
+      return value;
+    });
+
     const strategy = new RandomLaneStrategy();
     const vehicle = createMockVehicle();
     const laneCounts: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };

@@ -307,7 +307,7 @@ This document tracks the step-by-step implementation progress of the traffic int
 - TASK-041: 11 tests (yielding interpolation, safe lane changes, symmetric detection)
 - TASK-042: 8 tests (full REQ-NEW-E1/E3/E4/E5 acceptance coverage)
 
-**Git Branch**: `task-038-042-emergency-vehicle-controller` (commit pending)
+**Git Branch**: `task-038-042-emergency-vehicle-controller` (pushed)
 **Build Status**: ✓ 0 TypeScript errors, all tests passing
 
 **Integration Points**:
@@ -352,7 +352,7 @@ This document tracks the step-by-step implementation progress of the traffic int
    5. `task-022-027-conflict-zone-manager` (be36055)
    6. `task-028-032-vehicle-manager` (a6115f9)
    7. `task-033-037-collision-detection` (pushed)
-   8. `task-038-042-emergency-vehicle-controller` (commit pending) ← Current
+   8. `task-038-042-emergency-vehicle-controller` (pushed) ← Current
 
 ---
 

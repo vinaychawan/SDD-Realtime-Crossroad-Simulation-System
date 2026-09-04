@@ -21,7 +21,8 @@
 ### Code Changes
 - `src/components/ConfigurationManager/configuration-manager.interface.ts` — added `ConfigRunState = 'CONFIGURATION_ACTIVE' | 'RUNNING' | 'PAUSED'`.
 - `src/components/ConfigurationManager/ConfigurationManager.ts` — `setRunState()`/`getRunState()` (concrete-class-only methods, to be wired from the Simulation Orchestrator in TASK-067); `update()` checks a `STARTUP_ONLY_FIELDS` list (`signalCoordinationMode`, `laneSelectionStrategy`) and throws `StartupOnlyFieldError(field)` if the partial touches either field while `runState !== 'CONFIGURATION_ACTIVE'`, checked before range validation.
-- `src/components/ConfigurationManager/ConfigurationManager.test.ts` — parameterized tests for `RUNNING`/`PAUSED` rejection of both fields, acceptance while `CONFIGURATION_ACTIVE`, a test proving other (non-startup-only) fields remain editable while `RUNNING`, and a transition test (`RUNNING` → rejected → back to `CONFIGURATION_ACTIVE` → accepted).
+- `src/components/ConfigurationManager/Test_006-config-manager-startup-only-field-enforcement.test.ts` (new, 7 tests) — parameterized tests for `RUNNING`/`PAUSED` rejection of both fields, acceptance while `CONFIGURATION_ACTIVE`, a test proving other (non-startup-only) fields remain editable while `RUNNING`, and a transition test (`RUNNING` → rejected → back to `CONFIGURATION_ACTIVE` → accepted).
+- See [Test_INT_004-009-config-manager-integration.test.ts](../tests/integration/Test_INT_004-009-config-manager-integration.test.ts) for the full run-state lifecycle scenario (CONFIGURATION_ACTIVE → RUNNING → PAUSED → CONFIGURATION_ACTIVE) crossed with validation and notification.
 
 ### Build Evidence
 ```
@@ -32,7 +33,7 @@ $ npm run build
 ### Test Results
 ```
 $ npm run test:coverage
- ✓ src/components/ConfigurationManager/ConfigurationManager.test.ts (23)
+ ✓ src/components/ConfigurationManager/Test_006-config-manager-startup-only-field-enforcement.test.ts (7)
 ```
 Includes: `rejects signalCoordinationMode changes while RUNNING`, `...while PAUSED`, `rejects laneSelectionStrategy changes while RUNNING`, `...while PAUSED`, `still allows non-startup-only fields to change while RUNNING`, `re-allows startup-only field changes after returning to CONFIGURATION_ACTIVE` — all passing.
 

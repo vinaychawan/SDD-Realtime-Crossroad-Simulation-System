@@ -1,14 +1,16 @@
+// Covers TASK-005 acceptance criteria only. See tasks/Tasks_005-config-manager-field-validation.md
 import { describe, it, expect } from 'vitest';
 import { InvalidConfigurationError } from '../../domain/errors';
 import { buildPresetConfig } from './scenarioPresets';
 import { validateSimulationConfig } from './validation';
+import { ConfigurationManager } from './ConfigurationManager';
 import type { SimulationConfig } from './configuration-manager.interface';
 
 function baseConfig(): SimulationConfig {
   return JSON.parse(JSON.stringify(buildPresetConfig('NORMAL_TRAFFIC')));
 }
 
-describe('validateSimulationConfig — boundary value analysis', () => {
+describe('TASK-005: Config Manager — field validation (boundary value analysis)', () => {
   describe('perDirection.spawnRatePerMinute (0–60)', () => {
     it.each([0, 60])('accepts boundary value %d', (value) => {
       const config = baseConfig();
@@ -175,5 +177,23 @@ describe('validateSimulationConfig — boundary value analysis', () => {
     for (const preset of ['NORMAL_TRAFFIC', 'CONGESTION_TEST', 'SPARSE_TRAFFIC', 'PRIORITY_OPERATIONS', 'CUSTOM'] as const) {
       expect(() => validateSimulationConfig(buildPresetConfig(preset))).not.toThrow();
     }
+  });
+
+  describe('update() validates and retains last valid value on rejection', () => {
+    it('throws InvalidConfigurationError and leaves the config unchanged', () => {
+      const manager = new ConfigurationManager();
+      const before = manager.getSnapshot();
+      expect(() => manager.update({ targetFrameRate: 45 as unknown as 30 | 60 })).toThrow(InvalidConfigurationError);
+      expect(manager.getSnapshot()).toEqual(before);
+    });
+
+    it('rejects out-of-range conflict zone values atomically (no partial application)', () => {
+      const manager = new ConfigurationManager();
+      const before = manager.getSnapshot();
+      expect(() =>
+        manager.update({ conflictZone: { sizeMeters: 999, maxWaitSeconds: 5, stopLineDistanceMeters: 20 } })
+      ).toThrow(InvalidConfigurationError);
+      expect(manager.getSnapshot().conflictZone).toEqual(before.conflictZone);
+    });
   });
 });

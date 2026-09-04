@@ -33,13 +33,15 @@ $ npm run build
 ### Test Results
 ```
 $ npm run test:coverage
- ✓ src/components/ConfigurationManager/ConfigurationManager.test.ts (23)
- ✓ src/components/ConfigurationManager/scenarioPresets.test.ts (11)
- ✓ src/components/ConfigurationManager/validation.test.ts (31)
+ ✓ src/components/ConfigurationManager/Test_004-config-manager-initialize-module-structure.test.ts (5)
 
- Test Files  8 passed (8)
-      Tests  76 passed (76)
+ Test Files  12 passed (12)
+      Tests  82 passed (82)
 ```
+`Test_004-config-manager-initialize-module-structure.test.ts` is the test file dedicated to this task's acceptance
+criteria (constructor defaults, full field presence on the snapshot, README existence, no-`any` static check).
+See [Test_INT_004-009-config-manager-integration.test.ts](../tests/integration/Test_INT_004-009-config-manager-integration.test.ts)
+for cross-task scenarios exercising module construction together with TASK-006/007/008 behavior.
 
 ### Verification
 - [x] Builds without warnings

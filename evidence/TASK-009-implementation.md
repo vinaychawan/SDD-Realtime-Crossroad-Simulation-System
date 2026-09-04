@@ -18,18 +18,23 @@
 - ✓ Emergency config validated as three independent fields (MF-006 Option A), not a single dropdown+rate model
 
 ### Code Changes
-- No new production code — this task consolidates and completes the test suite started in TASK-005/006/007/008.
-- `src/components/ConfigurationManager/ConfigurationManager.test.ts` (23 tests) — constructor defaults, run-state tracking, valid `update()` (including nested `perDirection` merge without discarding other directions and independent emergency-field updates per MF-006), invalid `update()` retaining last valid value (including atomicity of nested `conflictZone` updates), full startup-only field matrix, all 5 presets via `applyScenarioPreset()`, and the full `onChange()` notification matrix.
-- `src/components/ConfigurationManager/validation.test.ts` (31 tests) — boundary value analysis for every field.
-- `src/components/ConfigurationManager/scenarioPresets.test.ts` (11 tests) — preset completeness and exact-value checks.
-- Total: 65 tests for the Configuration Manager module (76 across the whole `src/` suite so far).
+- No new production code — this task consolidates and completes the test suite started in TASK-004/005/006/007/008.
+- Tests are split one file per task (naming mirrors `tasks/Tasks_XXX-<slug>.md`), all under `src/components/ConfigurationManager/`:
+  - `Test_004-config-manager-initialize-module-structure.test.ts` (5 tests) — constructor defaults, run-state tracking, full field presence, README existence, no-`any` static check.
+  - `Test_005-config-manager-field-validation.test.ts` (33 tests) — boundary value analysis for every field, plus invalid-`update()` atomicity.
+  - `Test_006-config-manager-startup-only-field-enforcement.test.ts` (7 tests) — full startup-only field matrix across run states.
+  - `Test_007-config-manager-scenario-presets.test.ts` (16 tests) — preset completeness, exact-value checks, and `applyScenarioPreset()` via the manager.
+  - `Test_008-config-manager-change-notification.test.ts` (4 tests) — full `onChange()` notification matrix.
+  - `Test_009-config-manager-unit-test-suite.test.ts` (3 tests, this task) — valid `update()` matrix not already owned by another task file: nested `perDirection` merge without discarding other directions, and independent emergency-field updates per MF-006 (Option A: three independent fields, not a single dropdown+rate model).
+- `tests/integration/Test_INT_004-009-config-manager-integration.test.ts` (3 tests) — cross-function scenarios: invalid update after a preset leaves config intact and skips notification; full run-state lifecycle (CONFIGURATION_ACTIVE → RUNNING → PAUSED → CONFIGURATION_ACTIVE) combined with validation + notification; cycling all 5 presets with per-switch notification and full-field-population assertions.
+- Total: 68 tests for the Configuration Manager module + 3 integration tests (82 across the whole suite, `src/` + `tests/`).
 
 ### Build Evidence
 ```
 $ npm run build
 > tsc --noEmit && vite build
 ✓ 3 modules transformed.
-✓ built in 552ms
+✓ built in 1.48s
 ```
 0 TypeScript errors, 0 warnings.
 
@@ -37,8 +42,8 @@ $ npm run build
 ```
 $ npm run test:coverage
 
- Test Files  8 passed (8)
-      Tests  76 passed (76)
+ Test Files  12 passed (12)
+      Tests  82 passed (82)
 
 File                              | % Stmts | % Branch | % Funcs | % Lines
 -----------------------------------|---------|----------|---------|--------
@@ -53,4 +58,4 @@ ConfigurationManager (all files)  |     100 |      100 |     100 |     100
 - [x] Builds without warnings
 - [x] All tests pass — 100% statement/branch/function/line coverage on all runtime Configuration Manager code (exceeds the 90% requirement)
 - [x] Emergency config test matrix confirms three independent fields (`AMBULANCE`, `POLICE`, `FIRE_BRIGADE`) can be set without resetting each other (MF-006 Option A)
-- [x] Full test matrix confirmed: valid update ✓, invalid update per field ✓ (delegated to `validation.test.ts`'s boundary analysis), startup-only rejection ✓, all 5 presets ✓, change notification ✓
+- [x] Full test matrix confirmed across the per-task files: valid update ✓ (Test_009 + Test_INT), invalid update per field ✓ (Test_005), startup-only rejection ✓ (Test_006 + Test_INT), all 5 presets ✓ (Test_007 + Test_INT), change notification ✓ (Test_008 + Test_INT)

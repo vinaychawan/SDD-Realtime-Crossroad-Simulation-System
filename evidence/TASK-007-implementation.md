@@ -24,7 +24,7 @@
   - Custom: starts from the Normal Traffic baseline (fully populated, no `undefined`s) since MF-005 specifies "all parameters user manual" with no fixed table — the baseline is then freely editable via `update()`.
   - Conflict zone defaults (25m / 5s / 20m) applied uniformly since MF-005 does not vary them per preset.
 - `src/components/ConfigurationManager/ConfigurationManager.ts` — `applyScenarioPreset()` calls `buildPresetConfig()`, validates it (defensive; presets are valid by construction), replaces `this.config` wholesale, and notifies listeners.
-- `src/components/ConfigurationManager/scenarioPresets.test.ts` (new, 11 tests) — an `assertNoUndefinedFields()` deep-walks the returned config for every one of the 5 presets, plus exact-value assertions transcribed directly from the MF-005 table for each preset.
+- `src/components/ConfigurationManager/Test_007-config-manager-scenario-presets.test.ts` (new, 16 tests) — an `assertNoUndefinedFields()` deep-walks the returned config for every one of the 5 presets, exact-value assertions transcribed directly from the MF-005 table for each preset, and `applyScenarioPreset()` applied through the concrete manager for all 5 presets.
 
 ### Build Evidence
 ```
@@ -35,7 +35,7 @@ $ npm run build
 ### Test Results
 ```
 $ npm run test:coverage
- ✓ src/components/ConfigurationManager/scenarioPresets.test.ts (11)
+ ✓ src/components/ConfigurationManager/Test_007-config-manager-scenario-presets.test.ts (16)
 
 File              | % Stmts | % Branch | % Funcs | % Lines
 ------------------|---------|----------|---------|--------

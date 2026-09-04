@@ -1,5 +1,7 @@
+// Covers TASK-007 acceptance criteria only. See tasks/Tasks_007-config-manager-scenario-presets.md
 import { describe, it, expect } from 'vitest';
 import { buildPresetConfig } from './scenarioPresets';
+import { ConfigurationManager } from './ConfigurationManager';
 
 const ALL_PRESETS = ['NORMAL_TRAFFIC', 'CONGESTION_TEST', 'SPARSE_TRAFFIC', 'PRIORITY_OPERATIONS', 'CUSTOM'] as const;
 
@@ -14,7 +16,7 @@ function assertNoUndefinedFields(value: unknown, path = 'root'): void {
   }
 }
 
-describe('scenario presets (MF-005)', () => {
+describe('TASK-007: Config Manager — exhaustive scenario presets (MF-005)', () => {
   it.each(ALL_PRESETS)('%s has no undefined fields after being applied', (preset) => {
     const config = buildPresetConfig(preset);
     assertNoUndefinedFields(config);
@@ -68,5 +70,13 @@ describe('scenario presets (MF-005)', () => {
       const config = buildPresetConfig(preset);
       expect(config.conflictZone).toEqual({ sizeMeters: 25, maxWaitSeconds: 5, stopLineDistanceMeters: 20 });
     }
+  });
+
+  describe('applyScenarioPreset() via the concrete manager', () => {
+    it.each(ALL_PRESETS)('applies %s and fully populates the snapshot', (preset) => {
+      const manager = new ConfigurationManager();
+      manager.applyScenarioPreset(preset);
+      expect(manager.getSnapshot().scenarioPreset).toBe(preset);
+    });
   });
 });

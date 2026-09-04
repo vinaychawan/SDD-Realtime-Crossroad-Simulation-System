@@ -18,7 +18,8 @@
 
 ### Code Changes
 - `src/components/ConfigurationManager/ConfigurationManager.ts` — `onChange(listener)` appends to a private `listeners` array; a private `notify()` (called at the end of `update()` and `applyScenarioPreset()`, only on success) invokes every listener with `this.getSnapshot()`. `frozenClone()` deep-clones the config via `JSON.parse(JSON.stringify(...))` (safe — `SimulationConfig` is plain JSON-serializable data) and recursively `Object.freeze()`s every nested object, so both top-level and nested (`perDirection`, `emergency`, `conflictZone`, and per-direction sub-objects) mutation attempts fail.
-- `src/components/ConfigurationManager/ConfigurationManager.test.ts` — tests: listener fires exactly once per successful call and twice for two calls; listener does **not** fire when `update()` throws; received snapshot is frozen at every nesting level (`Object.isFrozen` checked on the root, `perDirection`, and `perDirection.NORTH`); a strict-mode mutation attempt throws `TypeError`; and mutation attempts don't leak into manager-internal state.
+- `src/components/ConfigurationManager/Test_008-config-manager-change-notification.test.ts` (new, 4 tests) — listener fires exactly once per successful call and twice for two calls; listener does **not** fire when `update()` throws; received snapshot is frozen at every nesting level (`Object.isFrozen` checked on the root, `perDirection`, and `perDirection.NORTH`); a strict-mode mutation attempt throws `TypeError`; mutation attempts don't leak into manager-internal state; `getSnapshot()` itself also returns an independent frozen clone.
+- See [Test_INT_004-009-config-manager-integration.test.ts](../tests/integration/Test_INT_004-009-config-manager-integration.test.ts) for notification behavior crossed with preset switching and run-state transitions.
 
 ### Build Evidence
 ```
@@ -29,7 +30,7 @@ $ npm run build
 ### Test Results
 ```
 $ npm run test:coverage
- ✓ src/components/ConfigurationManager/ConfigurationManager.test.ts (23)
+ ✓ src/components/ConfigurationManager/Test_008-config-manager-change-notification.test.ts (4)
 ```
 Includes: `fires on every successful update() and applyScenarioPreset()`, `does not fire when update() throws`, `passes a deeply frozen snapshot that cannot be mutated`, `getSnapshot() itself also returns a frozen, independent clone` — all passing.
 

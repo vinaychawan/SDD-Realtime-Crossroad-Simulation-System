@@ -19,8 +19,7 @@
 ### Code Changes
 - `src/components/ConfigurationManager/validation.ts` (new, ~65 lines) — `validateSimulationConfig()` checks every field of a candidate `SimulationConfig`: per-direction spawn rate (0–60), green/red duration (10–60), emergency per-type spawn rate (0–20 each), conflict zone size (20–50), max wait (2–10), stop-line distance (10–50), plus enum validation for `scenarioPreset`, `signalCoordinationMode`, `laneSelectionStrategy`, `targetFrameRate` (30|60), `simulationSpeedMultiplier` (1|2|4). Throws `InvalidConfigurationError(field, value)` on the first violation.
 - `src/components/ConfigurationManager/ConfigurationManager.ts` — `update()` builds a merged candidate config and calls `validateSimulationConfig()` **before** committing it to `this.config`; on throw, `this.config` is untouched (atomic — no partial application).
-- `src/components/ConfigurationManager/validation.test.ts` (new, 31 tests) — boundary value analysis (min/max/min−1/max+1) for every range-constrained field, plus enum-rejection tests for every enum-like field.
-- `src/components/ConfigurationManager/ConfigurationManager.test.ts` — includes tests asserting the config is unchanged after a rejected `update()` call.
+- `src/components/ConfigurationManager/Test_005-config-manager-field-validation.test.ts` (new, 33 tests) — boundary value analysis (min/max/min−1/max+1) for every range-constrained field, enum-rejection tests for every enum-like field, plus tests asserting `manager.getSnapshot()` is unchanged (atomic) after a rejected `update()` call.
 
 ### Build Evidence
 ```
@@ -32,7 +31,7 @@ $ npm run build
 ### Test Results
 ```
 $ npm run test:coverage
- ✓ src/components/ConfigurationManager/validation.test.ts (31)
+ ✓ src/components/ConfigurationManager/Test_005-config-manager-field-validation.test.ts (33)
 
 File          | % Stmts | % Branch | % Funcs | % Lines
 --------------|---------|----------|---------|--------

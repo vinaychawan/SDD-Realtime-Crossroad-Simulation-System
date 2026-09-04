@@ -1,0 +1,44 @@
+name: Spec-Driven Development Workflow
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: 'Workflow step (1-9)'
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+          - '7'
+          - '8'
+          - '9'
+      task_id:
+        description: 'Task ID (for steps 6-7)'
+        required: false
+        type: string
+
+jobs:
+  workflow-step:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run workflow step
+        run: |
+          chmod +x scripts/workflow.sh
+          ./scripts/workflow.sh ${{ github.event.inputs.step }}
+        env:
+          TASK_ID: ${{ github.event.inputs.task_id }}
+
+      - name: Post artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-step-${{ github.event.inputs.step }}-logs
+          path: .workflow-logs/
+          retention-days: 30

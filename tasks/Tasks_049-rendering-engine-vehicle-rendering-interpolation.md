@@ -2,7 +2,7 @@
 task_id: TASK-049
 title: "Rendering Engine — Implement vehicle rendering with interpolation"
 phase: "9: Rendering Engine"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-020]
 linked_adr: [ADR-002]
 depends_on: [TASK-048]

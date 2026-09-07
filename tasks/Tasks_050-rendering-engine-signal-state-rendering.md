@@ -2,7 +2,7 @@
 task_id: TASK-050
 title: "Rendering Engine — Implement signal state rendering"
 phase: "9: Rendering Engine"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-028]
 linked_adr: [ADR-003]
 depends_on: [TASK-048]

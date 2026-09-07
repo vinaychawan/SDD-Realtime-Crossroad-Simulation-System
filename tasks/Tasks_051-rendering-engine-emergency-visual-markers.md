@@ -2,7 +2,7 @@
 task_id: TASK-051
 title: "Rendering Engine — Implement emergency vehicle visual markers"
 phase: "9: Rendering Engine"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-NEW-E2]
 linked_adr: [ADR-006]
 depends_on: [TASK-048]

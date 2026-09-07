@@ -2,7 +2,7 @@
 task_id: TASK-055
 title: "UI Controller — Implement frame rate / signal mode / lane strategy controls"
 phase: "10: UI Controller"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-027]
 linked_adr: [ADR-007]
 depends_on: [TASK-006, TASK-053]

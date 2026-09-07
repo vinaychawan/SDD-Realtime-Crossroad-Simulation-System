@@ -2,7 +2,7 @@
 task_id: TASK-058
 title: "UI Controller — Implement simulation playback controls"
 phase: "10: UI Controller"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-027]
 linked_adr: []
 depends_on: [TASK-012, TASK-053]

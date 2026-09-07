@@ -2,7 +2,7 @@
 task_id: TASK-059
 title: "UI Controller — Implement run-state control locking"
 phase: "10: UI Controller"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-027]
 linked_adr: [ADR-007]
 depends_on: [TASK-055, TASK-058]

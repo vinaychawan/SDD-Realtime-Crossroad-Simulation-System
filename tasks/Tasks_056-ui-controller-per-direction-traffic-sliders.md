@@ -2,7 +2,7 @@
 task_id: TASK-056
 title: "UI Controller — Implement per-direction traffic sliders"
 phase: "10: UI Controller"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-027]
 linked_adr: [ADR-007]
 depends_on: [TASK-005, TASK-053]

@@ -1,4 +1,4 @@
-// Conflict Zone Manager (TASK-022-026). Prevents vehicle-vehicle collisions when Mode B
+// Conflict Zone Manager (TASK-022-026, TASK-066). Prevents vehicle-vehicle collisions when Mode B
 // (Opposing Simultaneous) signals allow both NORTH+SOUTH or EAST+WEST to be GREEN.
 import type { Direction, VehicleId, VehicleState, Vector2 } from '../../domain/types';
 import type { SimulationConfig } from '../ConfigurationManager/configuration-manager.interface';
@@ -7,6 +7,7 @@ import type {
   EntryDecision,
   DeadlockRecoveryProcedure
 } from './conflict-zone-manager.interface';
+import type { ITelemetry, DeadlockEvent } from '../Telemetry';
 
 // Per-vehicle wait tracking for deadlock detection (TASK-025).
 interface WaitingVehicle {
@@ -23,6 +24,7 @@ export class ConflictZoneManager implements IConflictZoneManager {
   private readonly zoneSizeMeters: number;
   private readonly maxWaitMs: number;
   private readonly stopLineDistanceMeters: number;
+  private readonly telemetry?: ITelemetry; // TASK-066: optional telemetry integration
 
   /** Vehicles currently inside the conflict zone, updated via updateOccupancy(). */
   private occupants: VehicleState[] = [];
@@ -33,10 +35,11 @@ export class ConflictZoneManager implements IConflictZoneManager {
   /** Current simulation time (physics ticks × 10ms), for deadlock timer calculations. */
   private currentTimeMs = 0;
 
-  constructor(config: SimulationConfig['conflictZone']) {
+  constructor(config: SimulationConfig['conflictZone'], telemetry?: ITelemetry) {
     this.zoneSizeMeters = config.sizeMeters;
     this.maxWaitMs = config.maxWaitSeconds * 1000;
     this.stopLineDistanceMeters = config.stopLineDistanceMeters;
+    this.telemetry = telemetry;
   }
 
   /** TASK-024: Entry decision logic. */
@@ -85,11 +88,29 @@ export class ConflictZoneManager implements IConflictZoneManager {
     if (procedure !== 'CONSERVATIVE') {
       console.warn(`ConflictZoneManager: unsupported recovery procedure "${procedure}" — using CONSERVATIVE`);
     }
+
+    // Get the wait record to compute wait duration.
+    const waitRecord = this.waitingQueue.get(vehicleId);
+    const waitDurationMs = waitRecord ? this.currentTimeMs - waitRecord.waitStartMs : 0;
+
+    // TASK-066: Emit DeadlockEvent to Telemetry.
+    if (this.telemetry) {
+      const event: DeadlockEvent = {
+        timestampMs: this.currentTimeMs,
+        eventType: 'DEADLOCK',
+        level: 'WARN',
+        vehicleId,
+        waitDurationMs,
+        recoveryProcedure: 'CONSERVATIVE'
+      };
+      this.telemetry.logEvent(event);
+    }
+
     // Remove from waiting queue (vehicle is now in forced-exit state).
     this.waitingQueue.delete(vehicleId);
 
     // In a full integration, this would:
-    // 1. Emit DeadlockEvent to Telemetry (TASK-057+ Metrics Collector not yet built).
+    // 1. ✅ Emit DeadlockEvent to Telemetry (TASK-066 complete).
     // 2. Set vehicle.speedMs = vehicle.speedMs * 0.5 (50% speed).
     // 3. Vehicle Manager checks Collision Detection on each subsequent tick; if collision
     //    imminent, vehicle re-enters STOP state and re-calls requestEntry().
@@ -97,7 +118,7 @@ export class ConflictZoneManager implements IConflictZoneManager {
     // For TASK-026 unit tests, we'll verify the waitingQueue removal and that the method
     // doesn't throw; full integration deferred to TASK-067.
 
-    // Placeholder log for now (will be replaced by Telemetry event in TASK-067).
+    // Placeholder log for now (will be replaced by full integration in TASK-067).
     console.log(
       `ConflictZoneManager: Applying CONSERVATIVE deadlock recovery to vehicle ${vehicleId} (50% speed, collision-checked)`
     );

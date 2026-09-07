@@ -2,7 +2,7 @@
 task_id: TASK-061
 title: "State Display — Implement Traffic Metrics Panel"
 phase: "11: State Display Panels"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-028, MF-001]
 linked_adr: [ADR-008]
 depends_on: [TASK-047]

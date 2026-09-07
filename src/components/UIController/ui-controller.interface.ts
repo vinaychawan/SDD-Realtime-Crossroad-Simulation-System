@@ -2,10 +2,15 @@
 // Mirrors docs/INTERFACES.md §10 for the browser DOM controls layer.
 import type { ConfigRunState, IConfigurationManager } from '../ConfigurationManager/configuration-manager.interface';
 import type { ISimulationOrchestrator } from '../SimulationOrchestrator/simulation-orchestrator.interface';
+import type { IStateDisplayPanels } from '../StateDisplayPanels/state-display-panels.interface';
 
 export interface IUIController {
   /** Wires scenario dropdown, radio buttons, sliders, and playback buttons to IConfigurationManager. */
-  bind(configManager: IConfigurationManager, orchestrator: ISimulationOrchestrator): void;
+  bind(
+    configManager: IConfigurationManager,
+    orchestrator: ISimulationOrchestrator,
+    stateDisplayPanels?: IStateDisplayPanels
+  ): void;
 
   /**
    * Enables/disables controls based on orchestrator run state, per REQ-027 §"UI State Machine":

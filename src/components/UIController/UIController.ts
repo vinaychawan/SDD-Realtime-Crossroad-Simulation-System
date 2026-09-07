@@ -8,6 +8,7 @@ import type {
   SimulationConfig
 } from '../ConfigurationManager/configuration-manager.interface';
 import type { ISimulationOrchestrator } from '../SimulationOrchestrator/simulation-orchestrator.interface';
+import type { IStateDisplayPanels } from '../StateDisplayPanels/state-display-panels.interface';
 import type { IUIController } from './ui-controller.interface';
 
 const SCENARIO_PRESETS: readonly ScenarioPreset[] = [
@@ -49,6 +50,7 @@ function cloneEmergencyRates(config: SimulationConfig): SimulationConfig['emerge
 export class UIController implements IUIController {
   private configManager: IConfigurationManager | undefined;
   private orchestrator: ISimulationOrchestrator | undefined;
+  private stateDisplayPanels: IStateDisplayPanels | undefined;
   private runState: ConfigRunState = 'CONFIGURATION_ACTIVE';
   private readonly root: HTMLElement;
   private controls = new Map<string, InputControl>();
@@ -62,11 +64,18 @@ export class UIController implements IUIController {
     this.renderScaffold();
   }
 
-  bind(configManager: IConfigurationManager, orchestrator: ISimulationOrchestrator): void {
+  bind(
+    configManager: IConfigurationManager,
+    orchestrator: ISimulationOrchestrator,
+    stateDisplayPanels?: IStateDisplayPanels
+  ): void {
     this.configManager = configManager;
     this.orchestrator = orchestrator;
+    this.stateDisplayPanels = stateDisplayPanels;
     configManager.onChange(config => this.syncControls(config));
+    configManager.onChange(config => this.stateDisplayPanels?.updateConfiguration(config));
     this.syncControls(configManager.getSnapshot());
+    this.stateDisplayPanels?.updateConfiguration(configManager.getSnapshot());
     this.bindEvents();
     this.setRunState(this.runState);
   }

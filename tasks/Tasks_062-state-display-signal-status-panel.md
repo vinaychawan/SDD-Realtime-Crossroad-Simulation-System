@@ -2,7 +2,7 @@
 task_id: TASK-062
 title: "State Display — Implement Signal Status Panel"
 phase: "11: State Display Panels"
-status: NOT-STARTED
+status: COMPLETED
 linked_requirements: [REQ-028]
 linked_adr: [ADR-003]
 depends_on: [TASK-050]

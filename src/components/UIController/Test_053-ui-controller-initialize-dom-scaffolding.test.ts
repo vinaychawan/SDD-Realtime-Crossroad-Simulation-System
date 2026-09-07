@@ -87,4 +87,17 @@ describe('TASK-053 UIController DOM scaffolding', () => {
 
     expect(root.querySelector('[data-ui-section="traffic"]')).not.toBeNull();
   });
+
+  it('can bind an optional state display panel and push initial configuration state', () => {
+    const controller = new UIController();
+    const configManager = new ConfigurationManager();
+    const stateDisplayPanels = { updateConfiguration: vi.fn() };
+
+    controller.bind(configManager, createOrchestrator(), stateDisplayPanels as never);
+    configManager.update({ targetFrameRate: 30 });
+
+    expect(stateDisplayPanels.updateConfiguration).toHaveBeenCalledTimes(2);
+    expect(stateDisplayPanels.updateConfiguration.mock.calls[0][0].scenarioPreset).toBe('NORMAL_TRAFFIC');
+    expect(stateDisplayPanels.updateConfiguration.mock.calls[1][0].targetFrameRate).toBe(30);
+  });
 });

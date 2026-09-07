@@ -15,8 +15,10 @@ import { Telemetry } from './components/Telemetry/Telemetry';
 import { RenderingEngine } from './components/RenderingEngine/RenderingEngine';
 import { StateDisplayPanels } from './components/StateDisplayPanels/StateDisplayPanels';
 import { UIController } from './components/UIController/UIController';
+import { ALL_DIRECTIONS } from './domain/constants';
 import type { CollisionEvent as CdsCollisionEvent } from './components/CollisionDetectionSystem/collision-detection-system.interface';
 import type { CollisionEvent as TelemetryCollisionEvent } from './components/Telemetry/telemetry.interface';
+import type { Direction } from './domain/types';
 
 // --- 1. Configuration Manager (foundation) ---
 const configManager = new ConfigurationManager();
@@ -51,6 +53,28 @@ function getSimulationVehicles() {
     ...vehicleManager.getActiveVehicles(),
     ...emergencyVehicleController.getActiveEmergencyVehicles()
   ];
+}
+
+function getOppositeDirection(direction: Direction): Direction {
+  switch (direction) {
+    case 'NORTH':
+      return 'SOUTH';
+    case 'SOUTH':
+      return 'NORTH';
+    case 'EAST':
+      return 'WEST';
+    case 'WEST':
+      return 'EAST';
+  }
+}
+
+function despawnExitedRegularVehicles(timestampMs: number): void {
+  for (const vehicle of vehicleManager.getActiveVehicles()) {
+    if (Math.abs(vehicle.position.x) > 70 || Math.abs(vehicle.position.y) > 70) {
+      vehicleManager.despawnVehicle(vehicle.id);
+      metricsCollector.recordDespawn(timestampMs);
+    }
+  }
 }
 
 // --- 4. Rendering Engine ---
@@ -113,6 +137,12 @@ configManager.onChange((snapshot) => {
 });
 
 let simulationTimeMs = 0;
+const regularSpawnAccumulatorsMs: Record<Direction, number> = {
+  NORTH: 0,
+  SOUTH: 0,
+  EAST: 0,
+  WEST: 0
+};
 
 // --- 10. Wire Physics Tick (100 Hz fixed timestep) ---
 orchestrator.onPhysicsTick((deltaMs) => {
@@ -120,17 +150,36 @@ orchestrator.onPhysicsTick((deltaMs) => {
 
   // 10a. Update signal controller timing
   signalController.tick(deltaMs);
+
+  // 10b. Schedule regular traffic from configured per-direction rates
+  for (const direction of ALL_DIRECTIONS) {
+    const spawnRatePerMinute = config.perDirection[direction].spawnRatePerMinute;
+    if (spawnRatePerMinute <= 0) {
+      regularSpawnAccumulatorsMs[direction] = 0;
+      continue;
+    }
+
+    const spawnIntervalMs = 60_000 / spawnRatePerMinute;
+    regularSpawnAccumulatorsMs[direction] += deltaMs;
+    while (regularSpawnAccumulatorsMs[direction] >= spawnIntervalMs) {
+      regularSpawnAccumulatorsMs[direction] -= spawnIntervalMs;
+      vehicleManager.spawnVehicle(direction, getOppositeDirection(direction));
+    }
+  }
   
-  // 10b. Spawn emergency vehicles (Poisson process)
+  // 10c. Spawn emergency vehicles (Poisson process)
   emergencyVehicleController.tick(deltaMs);
 
-  // 10c. Process queued regular-vehicle spawns
+  // 10d. Process queued regular-vehicle spawns
   vehicleManager.tick(deltaMs);
   
-  // 10d. Get all active vehicles
+  // 10e. Remove regular vehicles that left the simulation boundary
+  despawnExitedRegularVehicles(simulationTimeMs);
+
+  // 10f. Get all active vehicles
   const vehicles = getSimulationVehicles();
   
-  // 10e. Apply regular-vehicle yielding near emergency vehicles
+  // 10g. Apply regular-vehicle yielding near emergency vehicles
   const yieldingEffects = emergencyVehicleController.computeYieldingEffects(vehicles);
   for (const vehicle of vehicles) {
     const effect = yieldingEffects.get(vehicle.id);
@@ -143,33 +192,33 @@ orchestrator.onPhysicsTick((deltaMs) => {
     }
   }
 
-  // 10f. Update conflict zone occupancy
+  // 10h. Update conflict zone occupancy
   conflictZoneManager.updateOccupancy(vehicles);
   
-  // 10g. Request conflict zone entry decisions
+  // 10i. Request conflict zone entry decisions
   for (const vehicle of vehicles) {
     conflictZoneManager.requestEntry(vehicle);
   }
   
-  // 10h. Check for deadlocked vehicles and apply recovery
+  // 10j. Check for deadlocked vehicles and apply recovery
   const deadlockedVehicles = conflictZoneManager.getDeadlockedVehicles();
   for (const vehicle of deadlockedVehicles) {
     conflictZoneManager.applyDeadlockRecovery(vehicle.id, 'CONSERVATIVE');
     metricsCollector.recordDeadlock();
   }
   
-  // 10i. Update vehicle physics (one at a time)
+  // 10k. Update vehicle physics (one at a time)
   for (const vehicle of vehicles) {
     Object.assign(vehicle, physicsEngine.tick(vehicle, deltaMs));
   }
   
-  // 10j. Collision detection
+  // 10l. Collision detection
   collisionDetectionSystem.tick(vehicles);
 
-  // 10k. Update metrics clock
+  // 10m. Update metrics clock
   metricsCollector.updateTime(simulationTimeMs);
   
-  // 10l. Update metrics snapshot (called at 10 Hz from separate interval below)
+  // 10n. Update metrics snapshot (called at 10 Hz from separate interval below)
 });
 
 // --- 11. Wire Render Frame (30 or 60 Hz) ---

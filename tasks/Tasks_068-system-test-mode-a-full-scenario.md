@@ -2,7 +2,7 @@
 task_id: TASK-068
 title: "System Test — Mode A full scenario (10-minute run)"
 phase: "13: Integration & System Tests"
-status: NOT-STARTED
+status: ✅ COMPLETED
 linked_requirements: [REQ-005]
 linked_adr: [ADR-003]
 depends_on: [TASK-067]
@@ -17,11 +17,12 @@ estimated_effort: "3 hours"
 **Depends On**: [TASK-067](Tasks_067-integration-wire-all-components.md)
 
 ## Acceptance Criteria
-- [ ] Normal Traffic preset run for 10 simulated minutes in Mode A with zero signal-invariant violations
-- [ ] Zero unexpected collisions logged
+- [x] Normal Traffic preset run for 10 simulated minutes in Mode A with zero signal-invariant violations
+- [x] Zero unexpected collisions logged
 
 **Verification**: Automated long-running system test
 **Estimated Effort**: 3 hours
+**Implementation**: See [evidence/TASK-068-implementation.md](../evidence/TASK-068-implementation.md)
 
 ---
 [← Back to Tasks Index](README.md)

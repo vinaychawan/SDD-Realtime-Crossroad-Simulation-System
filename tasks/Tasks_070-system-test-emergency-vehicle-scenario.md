@@ -2,7 +2,7 @@
 task_id: TASK-070
 title: "System Test — Emergency vehicle scenario (Priority Operations preset)"
 phase: "13: Integration & System Tests"
-status: NOT-STARTED
+status: ✅ COMPLETED
 linked_requirements: [REQ-NEW-E1, REQ-NEW-E3, REQ-NEW-E4, REQ-NEW-E5]
 linked_adr: [ADR-006]
 depends_on: [TASK-067]
@@ -17,11 +17,12 @@ estimated_effort: "4 hours"
 **Depends On**: [TASK-067](Tasks_067-integration-wire-all-components.md)
 
 ## Acceptance Criteria
-- [ ] Priority Operations preset run for 5 simulated minutes; all 3 emergency types spawn at configured rates ±10%
-- [ ] Emergency vehicles observed overriding RED signals; nearby regular vehicles observed yielding (speed reduction/lane change)
+- [x] Priority Operations preset run for 5 simulated minutes; all 3 emergency types spawn at configured rates ±10%
+- [x] Emergency vehicles observed overriding RED signals; nearby regular vehicles observed yielding (speed reduction/lane change)
 
 **Verification**: Automated system test with telemetry assertions
 **Estimated Effort**: 4 hours
+**Implementation**: See [evidence/TASK-070-implementation.md](../evidence/TASK-070-implementation.md)
 
 ---
 [← Back to Tasks Index](README.md)

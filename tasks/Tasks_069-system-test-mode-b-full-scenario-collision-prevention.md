@@ -2,7 +2,7 @@
 task_id: TASK-069
 title: "System Test — Mode B full scenario with collision prevention"
 phase: "13: Integration & System Tests"
-status: NOT-STARTED
+status: ✅ COMPLETED
 linked_requirements: [REQ-005, REQ-NEW-COLLISION-PREVENTION-1, BF-003]
 linked_adr: [ADR-003, ADR-004]
 depends_on: [TASK-067]
@@ -17,11 +17,12 @@ estimated_effort: "4 hours"
 **Depends On**: [TASK-067](Tasks_067-integration-wire-all-components.md)
 
 ## Acceptance Criteria
-- [ ] Congestion Test preset run for 10 simulated minutes in Mode B with zero collisions
-- [ ] At least one deadlock scenario induced (synthetic heavy opposing traffic) and confirmed resolved via conservative recovery without collision
+- [x] Congestion Test preset run for 10 simulated minutes in Mode B with zero collisions
+- [x] At least one deadlock scenario induced (synthetic heavy opposing traffic) and confirmed resolved via conservative recovery without collision
 
 **Verification**: Automated long-running system test
 **Estimated Effort**: 4 hours
+**Implementation**: See [evidence/TASK-069-implementation.md](../evidence/TASK-069-implementation.md)
 
 ---
 [← Back to Tasks Index](README.md)

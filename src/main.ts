@@ -20,7 +20,7 @@ import type { CollisionEvent as TelemetryCollisionEvent } from './components/Tel
 
 // --- 1. Configuration Manager (foundation) ---
 const configManager = new ConfigurationManager();
-const config = configManager.getSnapshot();
+let config = configManager.getSnapshot();
 
 // --- 2. Telemetry (logging) ---
 const telemetry = new Telemetry();
@@ -46,6 +46,13 @@ const collisionDetectionSystem = new CollisionDetectionSystem();
 const emergencyVehicleController = new EmergencyVehicleController(config.emergency);
 const metricsCollector = new MetricsCollector();
 
+function getSimulationVehicles() {
+  return [
+    ...vehicleManager.getActiveVehicles(),
+    ...emergencyVehicleController.getActiveEmergencyVehicles()
+  ];
+}
+
 // --- 4. Rendering Engine ---
 const canvasElement = document.createElement('canvas');
 canvasElement.id = 'simulation-canvas';
@@ -66,7 +73,7 @@ const orchestrator = new SimulationOrchestrator({
 });
 
 // --- 6. Wire Metrics Providers ---
-metricsCollector.setVehiclesProvider(() => vehicleManager.getActiveVehicles());
+metricsCollector.setVehiclesProvider(getSimulationVehicles);
 metricsCollector.setRenderFpsProvider(() => orchestrator.getRenderFrameRate());
 metricsCollector.setPhysicsHzProvider(() => orchestrator.getPhysicsTickRate());
 metricsCollector.setMemoryMbProvider(() => (performance as any).memory?.usedJSHeapSize / (1024 * 1024) || 0);
@@ -101,47 +108,73 @@ configManager.onChange((snapshot) => {
     oldValue: config,
     newValue: snapshot
   });
+  config = snapshot;
+  emergencyVehicleController.updateEmergencyConfig(snapshot.emergency);
 });
+
+let simulationTimeMs = 0;
 
 // --- 10. Wire Physics Tick (100 Hz fixed timestep) ---
 orchestrator.onPhysicsTick((deltaMs) => {
+  simulationTimeMs += deltaMs;
+
   // 10a. Update signal controller timing
   signalController.tick(deltaMs);
   
   // 10b. Spawn emergency vehicles (Poisson process)
   emergencyVehicleController.tick(deltaMs);
+
+  // 10c. Process queued regular-vehicle spawns
+  vehicleManager.tick(deltaMs);
   
-  // 10c. Get all active vehicles
-  const vehicles = vehicleManager.getActiveVehicles();
+  // 10d. Get all active vehicles
+  const vehicles = getSimulationVehicles();
   
-  // 10d. Update conflict zone occupancy
+  // 10e. Apply regular-vehicle yielding near emergency vehicles
+  const yieldingEffects = emergencyVehicleController.computeYieldingEffects(vehicles);
+  for (const vehicle of vehicles) {
+    const effect = yieldingEffects.get(vehicle.id);
+    if (effect) {
+      Object.assign(vehicle, {
+        speedMs: vehicle.speedMs * effect.targetSpeedFactor,
+        speedKmh: vehicle.speedKmh * effect.targetSpeedFactor,
+        yieldingActive: true
+      });
+    }
+  }
+
+  // 10f. Update conflict zone occupancy
   conflictZoneManager.updateOccupancy(vehicles);
   
-  // 10e. Request conflict zone entry decisions
+  // 10g. Request conflict zone entry decisions
   for (const vehicle of vehicles) {
     conflictZoneManager.requestEntry(vehicle);
   }
   
-  // 10f. Check for deadlocked vehicles and apply recovery
+  // 10h. Check for deadlocked vehicles and apply recovery
   const deadlockedVehicles = conflictZoneManager.getDeadlockedVehicles();
   for (const vehicle of deadlockedVehicles) {
     conflictZoneManager.applyDeadlockRecovery(vehicle.id, 'CONSERVATIVE');
+    metricsCollector.recordDeadlock();
   }
   
-  // 10g. Update vehicle physics (one at a time)
+  // 10i. Update vehicle physics (one at a time)
   for (const vehicle of vehicles) {
-    physicsEngine.tick(vehicle, deltaMs);
+    Object.assign(vehicle, physicsEngine.tick(vehicle, deltaMs));
   }
   
-  // 10h. Collision detection
+  // 10j. Collision detection
   collisionDetectionSystem.tick(vehicles);
+
+  // 10k. Update metrics clock
+  metricsCollector.updateTime(simulationTimeMs);
   
-  // 10i. Update metrics (called at 10 Hz from separate interval below)
+  // 10l. Update metrics snapshot (called at 10 Hz from separate interval below)
 });
 
 // --- 11. Wire Render Frame (30 or 60 Hz) ---
 orchestrator.onRenderFrame(() => {
-  const vehicles = vehicleManager.getActiveVehicles();
+  const vehicles = getSimulationVehicles();
   const signalStates = signalController.getStates();
   const conflictZoneOccupants = conflictZoneManager.getOccupants();
   

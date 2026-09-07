@@ -48,6 +48,12 @@ export interface SimulationConfig {
 export type ConfigRunState = 'CONFIGURATION_ACTIVE' | 'RUNNING' | 'PAUSED';
 
 export interface IConfigurationManager {
+  /** Informs the manager of the current run state so startup-only fields can be guarded. */
+  setRunState(state: ConfigRunState): void;
+
+  /** Returns the last run state provided by the orchestrator/UI integration. */
+  getRunState(): ConfigRunState;
+
   /**
    * Applies a scenario preset, fully populating SimulationConfig per MF-005's exhaustive table.
    * @postcondition All fields in SimulationConfig are set to defined, non-ambiguous values.

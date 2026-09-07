@@ -19,6 +19,8 @@ export type VehicleId = string; // UUID
 
 export type Lane = 1 | 2 | 3;
 
+export type RegularVehicleType = 'CAR' | 'BUS' | 'TRUCK' | 'MOTORCYCLE';
+
 // meters, intersection-center origin
 export interface Vector2 {
   readonly x: number;
@@ -35,6 +37,7 @@ export interface VehicleState {
   readonly speedMs: number; // physics unit — NF-001
   readonly isEmergency: boolean;
   readonly emergencyType?: EmergencyVehicleType;
+  readonly vehicleType?: RegularVehicleType;
   readonly yieldingActive: boolean; // REQ-NEW-E4
 }
 

@@ -95,12 +95,12 @@ describe('TASK-050: Rendering Engine signal state rendering', () => {
     expect(updatedFrameFillColors).toContain('#28a745');
   });
 
-  it('draws one signal light arc per direction', () => {
+  it('draws one signal light arc per lane for each direction', () => {
     const context = createMockContext();
     const renderer = new RenderingEngine({ context });
 
     renderer.renderFrame([], signals(), []);
 
-    expect(context.calls.filter((call) => call.name === 'arc')).toHaveLength(4);
+    expect(context.calls.filter((call) => call.name === 'arc')).toHaveLength(12);
   });
 });

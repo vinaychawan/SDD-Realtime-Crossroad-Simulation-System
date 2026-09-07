@@ -1,6 +1,6 @@
 // Canvas 2D Rendering Engine (TASK-048-052).
 // Draws read-only snapshots of the simulation state with display-only interpolation.
-import type { Direction, EmergencyVehicleType, SignalDirectionState, VehicleId, VehicleState, Vector2 } from '../../domain/types';
+import type { Direction, EmergencyVehicleType, RegularVehicleType, SignalDirectionState, VehicleId, VehicleState, Vector2 } from '../../domain/types';
 import type { IRenderer } from './rendering-engine.interface';
 
 export type SignalModeForRendering = 'STRICT_MUTUAL_EXCLUSION' | 'OPPOSING_SIMULTANEOUS';
@@ -55,6 +55,13 @@ const EMERGENCY_STYLES: Record<EmergencyVehicleType, EmergencyVehicleStyle> = {
 };
 
 const DIRECTIONS: readonly Direction[] = ['NORTH', 'SOUTH', 'EAST', 'WEST'];
+const LANE_OFFSETS: Record<1 | 2 | 3, number> = { 1: -8, 2: 0, 3: 8 };
+const REGULAR_VEHICLE_STYLES: Record<RegularVehicleType, { readonly color: string; readonly lengthM: number; readonly widthM: number; readonly label: string }> = {
+  CAR: { color: '#4dabf7', lengthM: 4.5, widthM: 2, label: 'CAR' },
+  BUS: { color: '#ffd43b', lengthM: 9, widthM: 2.6, label: 'BUS' },
+  TRUCK: { color: '#868e96', lengthM: 7.5, widthM: 2.5, label: 'TRK' },
+  MOTORCYCLE: { color: '#f783ac', lengthM: 2.4, widthM: 1, label: 'MC' }
+};
 
 /** Canvas 2D renderer implementing docs/INTERFACES.md §10. */
 export class RenderingEngine implements IRenderer {
@@ -170,12 +177,13 @@ export class RenderingEngine implements IRenderer {
     const ctx = this.context;
     ctx.save();
     ctx.fillStyle = '#2f3437';
-    ctx.fillRect(0, this.heightPx / 2 - 60, this.widthPx, 120);
-    ctx.fillRect(this.widthPx / 2 - 60, 0, 120, this.heightPx);
+    const roadHalfWidthPx = 14 * this.pixelsPerMeter;
+    ctx.fillRect(0, this.heightPx / 2 - roadHalfWidthPx, this.widthPx, roadHalfWidthPx * 2);
+    ctx.fillRect(this.widthPx / 2 - roadHalfWidthPx, 0, roadHalfWidthPx * 2, this.heightPx);
     ctx.strokeStyle = '#f8f9fa';
-    ctx.lineWidth = 2;
-
-    for (const offset of [-20, 20]) {
+    ctx.lineWidth = 1;
+    for (const lane of [1, 2, 3] as const) {
+      const offset = LANE_OFFSETS[lane] * this.pixelsPerMeter;
       ctx.beginPath();
       ctx.moveTo(0, this.heightPx / 2 + offset);
       ctx.lineTo(this.widthPx, this.heightPx / 2 + offset);
@@ -185,6 +193,16 @@ export class RenderingEngine implements IRenderer {
       ctx.lineTo(this.widthPx / 2 + offset, this.heightPx);
       ctx.stroke();
     }
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, this.heightPx / 2);
+    ctx.lineTo(this.widthPx, this.heightPx / 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(this.widthPx / 2, 0);
+    ctx.lineTo(this.widthPx / 2, this.heightPx);
+    ctx.stroke();
 
     ctx.restore();
   }
@@ -215,10 +233,17 @@ export class RenderingEngine implements IRenderer {
     const ctx = this.context;
     const position = this.signalCanvasPosition(direction);
     ctx.save();
-    ctx.fillStyle = this.getSignalColor(signal.state);
-    ctx.beginPath();
-    ctx.arc(position.x, position.y, 12, 0, Math.PI * 2);
-    ctx.fill();
+    for (const lane of [1, 2, 3] as const) {
+      const lanePosition = this.offsetSignalPosition(position, direction, lane);
+      ctx.fillStyle = this.getSignalColor(signal.state);
+      ctx.beginPath();
+      ctx.arc(lanePosition.x, lanePosition.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#111111';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(lane), lanePosition.x, lanePosition.y + 3);
+    }
     ctx.fillStyle = '#111111';
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
@@ -231,15 +256,23 @@ export class RenderingEngine implements IRenderer {
     const ctx = this.context;
     const position = this.worldToCanvas(vehicle.position);
     const isHorizontal = vehicle.direction === 'EAST' || vehicle.direction === 'WEST';
-    const width = (isHorizontal ? 4.5 : 2) * this.pixelsPerMeter;
-    const height = (isHorizontal ? 2 : 4.5) * this.pixelsPerMeter;
+    const style = vehicle.isEmergency || !vehicle.vehicleType ? undefined : REGULAR_VEHICLE_STYLES[vehicle.vehicleType];
+    const lengthM = style?.lengthM ?? 4.5;
+    const widthM = style?.widthM ?? 2;
+    const width = (isHorizontal ? lengthM : widthM) * this.pixelsPerMeter;
+    const height = (isHorizontal ? widthM : lengthM) * this.pixelsPerMeter;
 
     ctx.save();
-    ctx.fillStyle = vehicle.isEmergency && vehicle.emergencyType ? this.getEmergencyVehicleStyle(vehicle.emergencyType).bodyColor : '#4dabf7';
+    ctx.fillStyle = vehicle.isEmergency && vehicle.emergencyType ? this.getEmergencyVehicleStyle(vehicle.emergencyType).bodyColor : style?.color ?? '#4dabf7';
     ctx.strokeStyle = inConflictZone ? '#ff8800' : '#111111';
     ctx.lineWidth = inConflictZone ? 4 : 1;
     ctx.fillRect(position.x - width / 2, position.y - height / 2, width, height);
     ctx.strokeRect(position.x - width / 2, position.y - height / 2, width, height);
+
+    ctx.fillStyle = '#111111';
+    ctx.font = '9px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(style?.label ?? `L${vehicle.lane}`, position.x, position.y + 3);
 
     if (vehicle.isEmergency && vehicle.emergencyType) {
       this.drawEmergencyMarkers(vehicle, position, width, height);
@@ -283,6 +316,14 @@ export class RenderingEngine implements IRenderer {
       case 'WEST':
         return { x: this.widthPx / 2 + 90, y: this.heightPx / 2 - 90 };
     }
+  }
+
+  private offsetSignalPosition(position: Vector2, direction: Direction, lane: 1 | 2 | 3): Vector2 {
+    const offset = LANE_OFFSETS[lane] * this.pixelsPerMeter;
+    if (direction === 'NORTH' || direction === 'SOUTH') {
+      return { x: position.x + offset, y: position.y };
+    }
+    return { x: position.x, y: position.y - offset };
   }
 
   private cloneVehicle(vehicle: VehicleState): VehicleState {

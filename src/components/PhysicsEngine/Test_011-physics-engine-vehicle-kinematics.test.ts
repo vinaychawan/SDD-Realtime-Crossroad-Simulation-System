@@ -24,15 +24,15 @@ describe('TASK-011: Physics Engine — vehicle kinematics update', () => {
     const engine = new PhysicsEngine();
     const vehicle = makeVehicle({ direction: 'NORTH', position: { x: 0, y: 100 }, speedMs: 10 });
     const next = engine.tick(vehicle, PHYSICS_TICK_MS);
-    // NORTH-origin vehicles travel toward -y; 10 m/s * 0.01s = 0.1m.
-    expect(next.position).toEqual({ x: 0, y: 99.9 });
+    // NORTH-origin vehicles spawn south of the intersection and travel toward +y.
+    expect(next.position).toEqual({ x: 0, y: 100.1 });
   });
 
   it.each([
-    ['NORTH', { x: 0, y: -1 }],
-    ['SOUTH', { x: 0, y: 1 }],
-    ['EAST', { x: -1, y: 0 }],
-    ['WEST', { x: 1, y: 0 }]
+    ['NORTH', { x: 0, y: 1 }],
+    ['SOUTH', { x: 0, y: -1 }],
+    ['EAST', { x: 1, y: 0 }],
+    ['WEST', { x: -1, y: 0 }]
   ] as const)('moves a %s-origin vehicle along its documented travel vector', (direction, unit) => {
     const engine = new PhysicsEngine();
     const vehicle = makeVehicle({ direction, position: { x: 0, y: 0 }, speedMs: 20 });

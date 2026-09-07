@@ -9,7 +9,8 @@ export interface IUIController {
   bind(
     configManager: IConfigurationManager,
     orchestrator: ISimulationOrchestrator,
-    stateDisplayPanels?: IStateDisplayPanels
+    stateDisplayPanels?: IStateDisplayPanels,
+    onReset?: () => void
   ): void;
 
   /**

@@ -18,7 +18,7 @@ import { UIController } from './components/UIController/UIController';
 import { ALL_DIRECTIONS } from './domain/constants';
 import type { CollisionEvent as CdsCollisionEvent } from './components/CollisionDetectionSystem/collision-detection-system.interface';
 import type { CollisionEvent as TelemetryCollisionEvent } from './components/Telemetry/telemetry.interface';
-import type { Direction } from './domain/types';
+import type { Direction, SignalDirectionState, VehicleState } from './domain/types';
 
 // --- 1. Configuration Manager (foundation) ---
 const configManager = new ConfigurationManager();
@@ -31,22 +31,41 @@ const telemetry = new Telemetry();
 const physicsEngine = new PhysicsEngine();
 
 // Signal Controller - needs initialization with mode and timing
-const signalController = new SignalController();
+let signalController = new SignalController();
 signalController.initialize(config.signalCoordinationMode, config.perDirection);
 
 // Conflict Zone Manager
 const conflictZoneManager = new ConflictZoneManager(config.conflictZone, telemetry);
 
 // Vehicle Manager - needs a lane selection strategy
-const laneStrategy = config.laneSelectionStrategy === 'RANDOM' 
-  ? new RandomLaneStrategy() 
-  : new IntelligentLaneStrategy();
-const vehicleManager = new VehicleManager(config, laneStrategy);
+function createLaneStrategy() {
+  return config.laneSelectionStrategy === 'RANDOM'
+    ? new RandomLaneStrategy()
+    : new IntelligentLaneStrategy();
+}
+let vehicleManager = new VehicleManager(config, createLaneStrategy());
 
 // Collision Detection, Emergency Vehicles, Metrics
 const collisionDetectionSystem = new CollisionDetectionSystem();
 const emergencyVehicleController = new EmergencyVehicleController(config.emergency);
 const metricsCollector = new MetricsCollector();
+
+function resetSimulationComponents(): void {
+  simulationTimeMs = 0;
+  for (const direction of ALL_DIRECTIONS) {
+    regularSpawnAccumulatorsMs[direction] = 0;
+  }
+
+  recreateSignalController();
+  renderingEngine.setSignalMode(config.signalCoordinationMode);
+  vehicleManager = new VehicleManager(config, createLaneStrategy());
+  emergencyVehicleController.reset();
+}
+
+function recreateSignalController(): void {
+  signalController = new SignalController();
+  signalController.initialize(config.signalCoordinationMode, config.perDirection);
+}
 
 function getSimulationVehicles() {
   return [
@@ -78,6 +97,7 @@ function despawnExitedRegularVehicles(timestampMs: number): void {
 }
 
 // --- 4. Rendering Engine ---
+const uiController = new UIController('app');
 const canvasElement = document.createElement('canvas');
 canvasElement.id = 'simulation-canvas';
 canvasElement.width = 800;
@@ -122,8 +142,8 @@ collisionDetectionSystem.onCollision((event) => {
 
 // --- 9. Wire Configuration Changes ---
 configManager.onChange((snapshot) => {
-  // Note: Signal mode cannot be changed at runtime (StartupOnlyFieldError)
-  // but other config changes can be applied
+  const previousSignalMode = config.signalCoordinationMode;
+  const previousLaneStrategy = config.laneSelectionStrategy;
   telemetry.logEvent({
     timestampMs: Date.now(),
     eventType: 'CONFIG_CHANGE',
@@ -133,6 +153,15 @@ configManager.onChange((snapshot) => {
     newValue: snapshot
   });
   config = snapshot;
+  if (configManager.getRunState() !== 'RUNNING') {
+    recreateSignalController();
+  }
+  if (snapshot.signalCoordinationMode !== previousSignalMode) {
+    renderingEngine.setSignalMode(snapshot.signalCoordinationMode);
+  }
+  if (snapshot.laneSelectionStrategy !== previousLaneStrategy) {
+    vehicleManager = new VehicleManager(snapshot, createLaneStrategy());
+  }
   emergencyVehicleController.updateEmergencyConfig(snapshot.emergency);
 });
 
@@ -209,6 +238,7 @@ orchestrator.onPhysicsTick((deltaMs) => {
   
   // 10k. Update vehicle physics (one at a time)
   for (const vehicle of vehicles) {
+    applySignalControl(vehicle, signalController.getStates()[vehicle.direction]);
     Object.assign(vehicle, physicsEngine.tick(vehicle, deltaMs));
   }
   
@@ -236,13 +266,12 @@ orchestrator.onRenderFrame(() => {
 });
 
 // --- 12. UI Controller & State Display Panels ---
-const uiController = new UIController('app');
 const stateDisplayRoot = document.createElement('div');
 stateDisplayRoot.id = 'state-display';
 document.getElementById('app')?.after(stateDisplayRoot);
 
 const stateDisplayPanels = new StateDisplayPanels(stateDisplayRoot);
-uiController.bind(configManager, orchestrator, stateDisplayPanels);
+uiController.bind(configManager, orchestrator, stateDisplayPanels, resetSimulationComponents);
 
 // --- 13. Wire Metrics Update (10 Hz) ---
 setInterval(() => {
@@ -258,6 +287,45 @@ setInterval(() => {
   stateDisplayPanels.updateSignalStatus(signalStates);
   stateDisplayPanels.refreshMetrics(snapshot);
 }, 100); // 10 Hz
+
+function applySignalControl(vehicle: VehicleState, signal: SignalDirectionState): void {
+  if (vehicle.isEmergency) {
+    return;
+  }
+
+  if (signal.state === 'GREEN') {
+    if (vehicle.speedMs === 0) {
+      const cruiseSpeedKmh = getCruiseSpeedKmh(vehicle);
+      Object.assign(vehicle, { speedKmh: cruiseSpeedKmh, speedMs: cruiseSpeedKmh / 3.6 });
+    }
+    return;
+  }
+
+  const stopDistanceMeters = config.conflictZone.sizeMeters / 2 + config.conflictZone.stopLineDistanceMeters;
+  const atStopLine =
+    (vehicle.direction === 'NORTH' && vehicle.position.y >= -stopDistanceMeters) ||
+    (vehicle.direction === 'SOUTH' && vehicle.position.y <= stopDistanceMeters) ||
+    (vehicle.direction === 'EAST' && vehicle.position.x >= -stopDistanceMeters) ||
+    (vehicle.direction === 'WEST' && vehicle.position.x <= stopDistanceMeters);
+
+  if (atStopLine) {
+    Object.assign(vehicle, { speedKmh: 0, speedMs: 0 });
+  }
+}
+
+function getCruiseSpeedKmh(vehicle: VehicleState): number {
+  switch (vehicle.vehicleType) {
+    case 'BUS':
+      return 24;
+    case 'TRUCK':
+      return 22;
+    case 'MOTORCYCLE':
+      return 34;
+    case 'CAR':
+    default:
+      return 30;
+  }
+}
 
 // --- 15. Log system start ---
 telemetry.logEvent({

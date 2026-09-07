@@ -44,6 +44,18 @@ describe('TASK-058 UIController playback controls', () => {
     expect(select<HTMLButtonElement>('[data-ui-control="reset"]').disabled).toBe(false);
   });
 
+  it('invokes the reset integration callback after orchestrator reset', () => {
+    const orchestrator = createOrchestrator();
+    const onReset = vi.fn();
+    const controller = new UIController();
+    controller.bind(new ConfigurationManager(), orchestrator, undefined, onReset);
+
+    select<HTMLButtonElement>('[data-ui-control="reset"]').click();
+
+    expect(orchestrator.reset).toHaveBeenCalledTimes(1);
+    expect(onReset).toHaveBeenCalledTimes(1);
+  });
+
   it('updates simulation speed multiplier dropdown', () => {
     const manager = new ConfigurationManager();
     const controller = new UIController();

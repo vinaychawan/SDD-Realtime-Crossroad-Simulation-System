@@ -9,10 +9,10 @@ import { PHYSICS_TICK_MS, type IPhysicsEngine } from './physics-engine.interface
 // the minimal, explicit, documented assumption needed for deterministic straight-line kinematics
 // at this stage. Revisit here if a future task formalizes turning/curved paths.
 const TRAVEL_UNIT_VECTOR: Record<Direction, Vector2> = {
-  NORTH: { x: 0, y: -1 },
-  SOUTH: { x: 0, y: 1 },
-  EAST: { x: -1, y: 0 },
-  WEST: { x: 1, y: 0 }
+  NORTH: { x: 0, y: 1 },
+  SOUTH: { x: 0, y: -1 },
+  EAST: { x: 1, y: 0 },
+  WEST: { x: -1, y: 0 }
 };
 
 export class PhysicsEngine implements IPhysicsEngine {

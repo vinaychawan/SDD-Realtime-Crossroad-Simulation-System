@@ -51,6 +51,7 @@ export class UIController implements IUIController {
   private configManager: IConfigurationManager | undefined;
   private orchestrator: ISimulationOrchestrator | undefined;
   private stateDisplayPanels: IStateDisplayPanels | undefined;
+  private onReset: (() => void) | undefined;
   private runState: ConfigRunState = 'CONFIGURATION_ACTIVE';
   private readonly root: HTMLElement;
   private controls = new Map<string, InputControl>();
@@ -67,11 +68,13 @@ export class UIController implements IUIController {
   bind(
     configManager: IConfigurationManager,
     orchestrator: ISimulationOrchestrator,
-    stateDisplayPanels?: IStateDisplayPanels
+    stateDisplayPanels?: IStateDisplayPanels,
+    onReset?: () => void
   ): void {
     this.configManager = configManager;
     this.orchestrator = orchestrator;
     this.stateDisplayPanels = stateDisplayPanels;
+    this.onReset = onReset;
     configManager.onChange(config => this.syncControls(config));
     configManager.onChange(config => this.stateDisplayPanels?.updateConfiguration(config));
     this.syncControls(configManager.getSnapshot());
@@ -281,15 +284,22 @@ export class UIController implements IUIController {
     });
 
     this.control('play').addEventListener('click', () => {
+      this.configManager?.setRunState?.('RUNNING');
       this.orchestrator?.start();
       this.setRunState('RUNNING');
     });
     this.control('pause').addEventListener('click', () => {
       this.orchestrator?.pause();
+      this.configManager?.setRunState?.('PAUSED');
       this.setRunState('PAUSED');
     });
     this.control('reset').addEventListener('click', () => {
       this.orchestrator?.reset();
+      this.configManager?.setRunState?.('CONFIGURATION_ACTIVE');
+      this.onReset?.();
+      if (this.configManager) {
+        this.syncControls(this.configManager.getSnapshot());
+      }
       this.setRunState('CONFIGURATION_ACTIVE');
     });
   }

@@ -1,6 +1,6 @@
 // Vehicle Manager (TASK-028-029). Manages vehicle lifecycle: spawn, despawn, lane selection.
 // REQ-007, ADR-005, MF-002 (serialized spawn ordering).
-import type { Direction, VehicleId, VehicleState } from '../../domain/types';
+import type { Direction, RegularVehicleType, VehicleId, VehicleState } from '../../domain/types';
 import { SpawnCapacityExceededError } from '../../domain/errors';
 import type { SimulationConfig } from '../ConfigurationManager/configuration-manager.interface';
 import type { IVehicleManager, ILaneSelectionStrategy } from './vehicle-manager.interface';
@@ -11,6 +11,7 @@ interface PendingSpawn {
   readonly direction: Direction;
   readonly exitDirection: Direction;
   readonly lane: 1 | 2 | 3;
+  readonly vehicleType: RegularVehicleType;
   readonly spawnTimeMs: number;
 }
 
@@ -28,6 +29,7 @@ interface VehicleRecord {
 export class VehicleManager implements IVehicleManager {
   // Default spawn speed (km/h) — may be overridden by config in future
   private readonly DEFAULT_SPAWN_SPEED_KMH = 30;
+  private readonly VEHICLE_TYPES: readonly RegularVehicleType[] = ['CAR', 'BUS', 'TRUCK', 'MOTORCYCLE'];
 
   private readonly strategy: ILaneSelectionStrategy;
 
@@ -76,6 +78,7 @@ export class VehicleManager implements IVehicleManager {
       direction,
       exitDirection,
       lane: selectedLane,
+      vehicleType: this.selectVehicleType(),
       spawnTimeMs: this.currentTimeMs
     });
 
@@ -103,6 +106,7 @@ export class VehicleManager implements IVehicleManager {
         speedKmh: this.DEFAULT_SPAWN_SPEED_KMH,
         speedMs: this.DEFAULT_SPAWN_SPEED_KMH / 3.6,
         isEmergency: false,
+        vehicleType: spawn.vehicleType,
         yieldingActive: false
       };
 
@@ -131,6 +135,13 @@ export class VehicleManager implements IVehicleManager {
     this.processSpawns();
   }
 
+  reset(): void {
+    this.vehicleRecords.clear();
+    this.spawnQueue.length = 0;
+    this.currentTimeMs = 0;
+    this.vehicleIdCounter = 0;
+  }
+
   // --- Private helpers ---
 
   /** Sort spawn queue by direction priority (TASK-029): N→S→E→W. */
@@ -143,20 +154,25 @@ export class VehicleManager implements IVehicleManager {
   private computeSpawnPosition(direction: Direction, lane: 1 | 2 | 3): { x: number; y: number } {
     // Spawn point is 60m before intersection center (at -Y for NORTH, etc.)
     // Lanes are offset perpendicular to travel direction
-    // Lane 1 (left): -5m offset, Lane 2 (center): 0m offset, Lane 3 (right): +5m offset
-    const laneOffsets: Record<1 | 2 | 3, number> = { 1: -5, 2: 0, 3: 5 };
+    // Lane 1 (left): -8m offset, Lane 2 (center): 0m offset, Lane 3 (right): +8m offset
+    const laneOffsets: Record<1 | 2 | 3, number> = { 1: -8, 2: 0, 3: 8 };
     const laneOffset = laneOffsets[lane];
 
     switch (direction) {
       case 'NORTH':
-        return { x: laneOffset, y: -60 }; // South of intersection
+        return { x: laneOffset, y: -60 }; // South of intersection, travelling north
       case 'SOUTH':
-        return { x: laneOffset, y: 60 }; // North of intersection
+        return { x: -laneOffset, y: 60 }; // North of intersection, travelling south
       case 'EAST':
-        return { x: -60, y: laneOffset }; // West of intersection
+        return { x: -60, y: -laneOffset }; // West of intersection, travelling east
       case 'WEST':
-        return { x: 60, y: laneOffset }; // East of intersection
+        return { x: 60, y: laneOffset }; // East of intersection, travelling west
     }
+  }
+
+  private selectVehicleType(): RegularVehicleType {
+    const index = (this.vehicleIdCounter - 1) % this.VEHICLE_TYPES.length;
+    return this.VEHICLE_TYPES[index];
   }
 
   /** Create a placeholder vehicle for strategy.selectLane() to inspect (at spawn point). */

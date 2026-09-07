@@ -136,6 +136,14 @@ export class EmergencyVehicleController implements IEmergencyVehicleController {
     return Array.from(this.activeEmergencyVehicles.values());
   }
 
+  reset(): void {
+    this.activeEmergencyVehicles.clear();
+    this.currentTimeMs = 0;
+    this.emergencyVehicleCounter = 0;
+    this.directionCursor = 0;
+    this.updateEmergencyConfig(this.emergencyConfig);
+  }
+
   private getSpawnTimer(emergencyType: EmergencyVehicleType): SpawnTimerState {
     return this.spawnTimers.get(emergencyType)!;
   }

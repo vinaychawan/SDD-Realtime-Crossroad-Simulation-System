@@ -125,6 +125,23 @@ describe('TASK-039: Emergency Vehicle Controller per-type Poisson spawn process'
     expect(events[0].emergencyType).toBe('AMBULANCE');
   });
 
+  it('reset() clears active emergency vehicles and restarts deterministic direction order', () => {
+    const events: EmergencyVehicleSpawnedEvent[] = [];
+    const controller = new EmergencyVehicleController(
+      config({ AMBULANCE: 20, POLICE: 0, FIRE_BRIGADE: 0 }),
+      { rng: () => MEAN_INTERVAL_RANDOM }
+    );
+    controller.onEmergencyVehicleSpawned((event) => events.push(event));
+    controller.tick(3000);
+
+    controller.reset();
+    controller.tick(3000);
+
+    expect(controller.getActiveEmergencyVehicles()).toHaveLength(1);
+    expect(events.map((event) => event.direction)).toEqual(['NORTH', 'NORTH']);
+    expect(events.map((event) => event.vehicleId)).toEqual(['emergency-1', 'emergency-1']);
+  });
+
   it('clamps out-of-range spawn rates to the supported 0–20/min range', () => {
     const events: EmergencyVehicleSpawnedEvent[] = [];
     const controller = new EmergencyVehicleController(

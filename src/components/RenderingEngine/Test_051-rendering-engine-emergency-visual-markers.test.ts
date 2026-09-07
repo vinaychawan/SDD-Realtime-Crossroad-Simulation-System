@@ -130,4 +130,21 @@ describe('TASK-051: Rendering Engine emergency vehicle visual markers', () => {
     expect(text).not.toContain('AMBULANCE');
     expect(context.calls.filter((call) => call.name === 'fillStyle').map((call) => call.args[0])).toContain('#4dabf7');
   });
+
+  it('renders regular cars, buses, trucks, and motorcycles with distinct labels and colors', () => {
+    const context = createMockContext();
+    const renderer = new RenderingEngine({ context });
+
+    renderer.renderFrame([
+      { ...emergencyVehicle('car', 'AMBULANCE'), isEmergency: false, emergencyType: undefined, vehicleType: 'CAR' },
+      { ...emergencyVehicle('bus', 'AMBULANCE'), isEmergency: false, emergencyType: undefined, vehicleType: 'BUS', position: { x: 10, y: 0 } },
+      { ...emergencyVehicle('truck', 'AMBULANCE'), isEmergency: false, emergencyType: undefined, vehicleType: 'TRUCK', position: { x: 20, y: 0 } },
+      { ...emergencyVehicle('motorcycle', 'AMBULANCE'), isEmergency: false, emergencyType: undefined, vehicleType: 'MOTORCYCLE', position: { x: 30, y: 0 } }
+    ], signals(), []);
+
+    const text = context.calls.filter((call) => call.name === 'fillText').map((call) => call.args[0]);
+    const fillStyles = context.calls.filter((call) => call.name === 'fillStyle').map((call) => call.args[0]);
+    expect(text).toEqual(expect.arrayContaining(['CAR', 'BUS', 'TRK', 'MC']));
+    expect(fillStyles).toEqual(expect.arrayContaining(['#4dabf7', '#ffd43b', '#868e96', '#f783ac']));
+  });
 });

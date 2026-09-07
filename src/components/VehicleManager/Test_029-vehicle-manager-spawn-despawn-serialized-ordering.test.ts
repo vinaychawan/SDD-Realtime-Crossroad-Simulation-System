@@ -56,6 +56,18 @@ describe('TASK-029: Vehicle Manager spawn/despawn with serialized ordering', () 
     expect(manager.getActiveVehicles()).toHaveLength(0);
   });
 
+  it('reset() clears active vehicles, pending spawns, and restarts ids', () => {
+    const manager = new VehicleManager(createMockConfig(), new RandomLaneStrategy());
+    manager.spawnVehicle('NORTH', 'SOUTH');
+    manager.tick(10);
+    manager.spawnVehicle('SOUTH', 'NORTH');
+
+    manager.reset();
+
+    expect(manager.getActiveVehicles()).toHaveLength(0);
+    expect(manager.spawnVehicle('EAST', 'WEST')).toBe('vehicle-1');
+  });
+
   it('multiple spawn requests on same tick are serialized in N→S→E→W order (MF-002)', () => {
     const manager = new VehicleManager(createMockConfig(), new RandomLaneStrategy());
 
@@ -154,5 +166,16 @@ describe('TASK-029: Vehicle Manager spawn/despawn with serialized ordering', () 
     expect(eastVehicle.position.x).toBe(-60);
     // WEST spawns east of intersection (x=60)
     expect(westVehicle.position.x).toBe(60);
+  });
+
+  it('assigns regular vehicle display types for visual simulation variety', () => {
+    const manager = new VehicleManager(createMockConfig(), new RandomLaneStrategy());
+    for (let i = 0; i < 4; i++) {
+      manager.spawnVehicle('NORTH', 'SOUTH');
+    }
+
+    manager.tick(10);
+
+    expect(manager.getActiveVehicles().map((vehicle) => vehicle.vehicleType)).toEqual(['CAR', 'BUS', 'TRUCK', 'MOTORCYCLE']);
   });
 });

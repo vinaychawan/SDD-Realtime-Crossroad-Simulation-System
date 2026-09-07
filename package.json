@@ -9,6 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:coverage:summary": "vitest run --coverage --coverage.reporter=text-summary --coverage.reporter=json-summary",
+    "ci:test:summary": "node scripts/ci-test-summary.mjs",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

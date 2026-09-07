@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+
+FROM node:20-bookworm-slim AS test-runner
+
+WORKDIR /app
+
+ENV CI=true \
+    NODE_ENV=test
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+CMD ["npm", "run", "ci:test:summary"]
